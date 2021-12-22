@@ -540,9 +540,7 @@ class VacationEntry(Frame):
         self.scene.remove_effect(self)
 
     def on_cancel(self):
-
         self.scene.remove_effect(self)
-        return 'Cancel'
 
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):

@@ -1,12 +1,12 @@
 # import datetime
 import os
 import sqlite3
-import datetime
-
+from datetime import date
+from typing import Any, Tuple, Optional, List, Union
 
 # Files and Folders
 HOME = os.path.expanduser('~')
-WORK = os.path.join(HOME, 'Dropbox', 'Work')
+WORK = os.path.join(HOME, 'OneDrive - UW', 'Work')
 DB_FILE = 'time_cards.db'
 
 
@@ -26,11 +26,11 @@ class TimeCardEntry(dict):
                          description=description,
                          action=action, time_code=time_code)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         if key in self.FIELDS:
             super().__setitem__(key, value)
 
-    def values(self):
+    def values(self) -> Tuple[str]:
         return (self['work_date'],
                 self['line_item'],
                 self['workorder'],
@@ -42,7 +42,7 @@ class TimeCardEntry(dict):
 
 
 class TimeCard:
-    def __init__(self, date=None, entries=[]):
+    def __init__(self, date: Optional(date) = None, entries: List[TimeCardEntry] = []) -> None:
         self.date = date
         self.entries = entries
 
@@ -56,7 +56,7 @@ class TimeCard:
         return len(self.entries)
 
     @property
-    def hours(self):
+    def hours(self) -> float:
         return sum([entry['hours'] for entry in self.entries])
 
 
@@ -75,7 +75,7 @@ class TimeCardDatabase:
         time_code = str (one of [R, CP, OT, A, S, PH, HOLIDAY])
     """
 
-    def __init__(self, filename=os.path.join(WORK, DB_FILE)):
+    def __init__(self, filename: str = os.path.join(WORK, DB_FILE)) -> None:
         self.dbfilename = filename
         self.current_view = TimeCard()
         self.active_record = None
@@ -94,19 +94,19 @@ class TimeCardDatabase:
                 """
             )
 
-    def get_record(self, date, item):
+    def get_record(self, work_date: date, item: int) -> Optional[TimeCardEntry]:
         sql = 'SELECT * FROM records WHERE work_date=? AND line_item=?'
         with self._connect() as db:
-            c = db.execute(sql, (date, item))
+            c = db.execute(sql, (work_date, item))
             record = c.fetchone()
             if record:
-                return TimeCardEntry(*record)
+                return TimeCardEntry(**record)
             else:
                 return None
 
-    def update_record(self, record):
+    def update_record(self, record: Union[TimeCardEntry, dict]) -> None:
         if not isinstance(record, (TimeCardEntry, dict)):
-            record = TimeCardEntry(*record)
+            record = TimeCardEntry(**record)
         sql = """
                 UPDATE records SET workorder=?, phase=?, hours=?, description=?, action=?, time_code=?
                 WHERE work_date=? AND line_item=?
@@ -117,9 +117,9 @@ class TimeCardDatabase:
         with self._connect() as db:
             db.execute(sql, values)
 
-    def add_record(self, record):
+    def add_record(self, record: Union[TimeCardEntry, dict]) -> None:
         if not isinstance(record, (TimeCardEntry, dict)):
-            record = TimeCardEntry(*record)
+            record = TimeCardEntry(**record)
         sql = """
                 INSERT INTO records(work_date, line_item, workorder, phase, hours, description, action, time_code)
                 VALUES(?,?,?,?,?,?,?,?)
@@ -131,38 +131,38 @@ class TimeCardDatabase:
             with self._connect() as db:
                 db.execute(sql, values)
 
-    def _delete_record(self, date, item):
+    def _delete_record(self, work_date: date, item: int) -> None:
         sql = 'DELETE FROM records WHERE work_date=? AND line_item=?'
         with self._connect() as db:
-            db.execute(sql, (date, item))
+            db.execute(sql, (work_date, item))
 
-    def delete_record(self, date, item):
+    def delete_record(self, work_date: date, item: int) -> None:
         """
         Remove record from database
         Line item numbers will be adjusted
         """
-        self._delete_record(date, item)
-        tc = self.get_timecard(date)
+        self._delete_record(work_date, item)
+        tc = self.get_timecard(work_date)
         for e in tc:
             self._delete_record(e['work_date'], e['line_item'])
         for i, e in enumerate(tc):
             e['line_item'] = i
             self.add_record(e)
 
-    def get_timecard(self, date):
+    def get_timecard(self, work_date: date) -> TimeCard:
         """
         Reruns a TimeCard object for the given date and
         sets current_view
         """
         sql = 'SELECT * FROM records WHERE work_date=?'
         with self._connect() as db:
-            c = db.execute(sql, [date])
-            tc = [TimeCardEntry(*record) for record in c.fetchall()]
+            c = db.execute(sql, [work_date])
+            tc = [TimeCardEntry(**record) for record in c.fetchall()]
             c.close()
-            self.current_view = TimeCard(date, tc)
+            self.current_view = TimeCard(work_date, tc)
             return self.current_view
 
-    def find_records(self, text, date1=datetime.date(2019, 1, 1), date2=datetime.date.today()):
+    def find_records(self, text: str, date1: date = date(2019, 1, 1), date2: date = date.today()) -> List[TimeCardEntry]:
         """
         Returns a list of TimeEntry objects who's description
         matches 'text' and work_dates are betewwn 'date1' and 'date2'
@@ -174,16 +174,16 @@ class TimeCardDatabase:
         text = f'%{text}%'
         with self._connect() as db:
             c = db.execute(sql, [text, date1, date2])
-            r = [TimeCardEntry(*record) for record in c.fetchall()]
+            r = [TimeCardEntry(**record) for record in c.fetchall()]
             c.close()
             return r
 
-    def _connect(self):
+    def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self.dbfilename, detect_types=(sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES))
 
 
 if __name__ == '__main__':
-    today = datetime.date.today()
+    today = date.today()
     db = TimeCardDatabase()
     tc = TimeCardEntry(today, 0, '000020', '039', 8,
                        'LEAD WORK', 'OVERHEAD', 'R')

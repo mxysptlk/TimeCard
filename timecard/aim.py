@@ -5,6 +5,7 @@ import time
 
 import keyring
 # import pyodbc
+from typing import Optional, Iterable
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -83,7 +84,7 @@ ACCT_PERCENT = 'mainForm:WO_ACCT_SINGLE_EDIT_content:subPercentValue'
 CONNECTION = 'DSN=fmax;UID=fmereports;PWD=fmerpts'
 
 
-def _locate_firefox_profile():
+def _locate_firefox_profile() -> str:
     home = os.path.expanduser('~')
     profile = ''
     if sys.platform == 'linux':
@@ -109,10 +110,9 @@ class AimSession:
     interacting with the UW work management web app
     """
 
-    def __init__(self, *, netid='', driver=None):
-        if not netid:
-            raise ValueError('netid must be provided')
-        if not driver:
+    def __init__(self, *, netid: str, driver: Optional[webdriver.Remote] = None) -> None:
+
+        if driver is None:
             opt = webdriver.FirefoxOptions()
             try:
                 opt.headless = True
@@ -137,7 +137,7 @@ class AimSession:
     def __getattr__(self, name):
         return getattr(self.driver, name)
 
-    def login(self):
+    def login(self) -> None:
         "Login to AiM. "
         password = keyring.get_password('aim', self.netid)
         if not password:
@@ -151,16 +151,16 @@ class AimSession:
         while 'NetID' in self.driver.title:
             time.sleep(1)
 
-    def click(self, element_id):
+    def click(self, element_id: str) -> None:
         self.driver.find_element(By.ID, element_id).click()
 
-    def clear(self, element_id):
+    def clear(self, element_id: str) -> None:
         self.driver.find_element(By.ID, element_id).clear()
 
-    def send_keys_to(self, element_id, keys):
+    def send_keys_to(self, element_id: str, keys: str) -> None:
         self.driver.find_element(By.ID, element_id).send_keys(keys)
 
-    def new_timecard(self, employee, date, entries):
+    def new_timecard(self, employee: str, date: str, entries: Iterable[str]) -> Iterable[str]:
 
         self.get(AIM_TIMECARD)
         self.click(NEW)
