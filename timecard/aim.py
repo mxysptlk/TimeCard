@@ -116,10 +116,12 @@ class AimSession:
             opt = webdriver.FirefoxOptions()
             try:
                 opt.headless = True
-                opt.profile = webdriver.FirefoxProfile(_locate_firefox_profile())
+                opt.profile = webdriver.FirefoxProfile(
+                    _locate_firefox_profile())
             except (AttributeError, TypeError):
                 opt.set_headless(True)
-            driver = webdriver.Firefox(options=opt, service_log_path=os.devnull)
+            driver = webdriver.Firefox(
+                options=opt, service_log_path=os.devnull)
 
         self.netid = netid
         self.shop = '17 ELECTRICAL'
