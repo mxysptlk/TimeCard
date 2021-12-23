@@ -5,6 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from configparser import ConfigParser
+from typing import Callable, NoReturn
 from threading import Thread
 
 import keyring
@@ -201,7 +202,7 @@ class BoxedButton(Button):
 
 
 class TimeCardView(Frame):
-    def __init__(self, screen, db):
+    def __init__(self, screen: Screen, db: TimeCardDatabase) -> None:
         super().__init__(screen, screen.height, screen.width,
                          title="Time Card",
                          can_scroll=False,
@@ -251,7 +252,7 @@ class TimeCardView(Frame):
 
         buttons.add_widget(BoxedButton('+Overhead', self.on_add_overhead), 0)
         buttons.add_widget(BoxedButton('Submit', self.on_submit), 1)
-        buttons.add_widget(BoxedButton('Vacation', self.on_vacation), 2)
+        # buttons.add_widget(BoxedButton('Vacation', self.on_vacation), 2)
         buttons.add_widget(BoxedButton('Settings', self.on_settings), 3)
         buttons.add_widget(BoxedButton('Search', self.on_search), 4)
         buttons.add_widget(BoxedButton('Quit', self.on_quit), 5)
@@ -260,6 +261,7 @@ class TimeCardView(Frame):
 
         self.fix()
 
+    # new_value param is required by asciimatics API
     def _reload_list(self, new_value=None):
         self.set_theme(CONFIG['DEFAULT']['theme'])
         self.save()
@@ -811,7 +813,7 @@ def init():
         CONFIG.write(f)
 
 
-def wrapper(func):
+def wrapper(func: Callable[[Screen, Scene], NoReturn]) -> Callable:
     """
     asciimatics wrapper:
 
@@ -832,7 +834,7 @@ def wrapper(func):
 
 
 @wrapper
-def main(screen, scene):
+def main(screen: Screen, scene: Scene) -> NoReturn:
     if os.path.exists(CONFIG_FILE):
         CONFIG.read(CONFIG_FILE)
     else:

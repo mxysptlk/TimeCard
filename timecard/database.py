@@ -1,6 +1,7 @@
 # import datetime
 import os
 import sqlite3
+from dataclasses import dataclass
 from datetime import date
 from typing import Any, Tuple, Optional, List, Union
 
@@ -10,39 +11,36 @@ WORK = os.path.join(HOME, 'OneDrive - UW', 'Work')
 DB_FILE = 'time_cards.db'
 
 
+@dataclass
 class TimeCardEntry(dict):
-    """
-    An ordered dict like object for time card data.
-    Prevents setting invalid keys.
-    """
-    FIELDS = ('work_date', 'line_item', 'workorder', 'phase',
-              'hours', 'description', 'action', 'time_code')
+    work_date: date = date.today()
+    line_item: int = 0
+    workorder: str = ''
+    phase: str = ''
+    hours: float = 0
+    description: str = ''
+    action: str = ''
+    time_code: str = 'R'
 
-    def __init__(self, work_date='', line_item='',
-                 workorder='', phase='', hours='',
-                 description='', action='', time_code='R'):
-        super().__init__(work_date=work_date, line_item=line_item,
-                         workorder=workorder, phase=phase, hours=hours,
-                         description=description,
-                         action=action, time_code=time_code)
+    def __getitem__(self, key: str) -> Any:
+        return self.__getattribute__(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if key in self.FIELDS:
-            super().__setitem__(key, value)
+        self.__setattr__(key, value)
 
-    def values(self) -> Tuple[str]:
-        return (self['work_date'],
-                self['line_item'],
-                self['workorder'],
-                self['phase'],
-                str(self['hours']),
-                self['description'],
-                self['action'],
-                self['time_code'])
+    def values(self) -> Tuple[Union[date, int, str]]:
+        return (self.work_date,
+                self.line_item,
+                self.workorder,
+                self.phase,
+                str(self.hours),
+                self.description,
+                self.action,
+                self.time_code)
 
 
 class TimeCard:
-    def __init__(self, date: Optional(date) = None, entries: List[TimeCardEntry] = []) -> None:
+    def __init__(self, date: Optional[date] = None, entries: List[TimeCardEntry] = []) -> None:
         self.date = date
         self.entries = entries
 
@@ -100,34 +98,34 @@ class TimeCardDatabase:
             c = db.execute(sql, (work_date, item))
             record = c.fetchone()
             if record:
-                return TimeCardEntry(**record)
+                return TimeCardEntry(*record)
             else:
                 return None
 
     def update_record(self, record: Union[TimeCardEntry, dict]) -> None:
-        if not isinstance(record, (TimeCardEntry, dict)):
+        if isinstance(record, (dict)):
             record = TimeCardEntry(**record)
         sql = """
                 UPDATE records SET workorder=?, phase=?, hours=?, description=?, action=?, time_code=?
                 WHERE work_date=? AND line_item=?
                 """
-        values = (record['workorder'], record['phase'], record['hours'],
-                  record['description'], record['action'], record['time_code'],
-                  record['work_date'], record['line_item'])
+        values = (record.workorder, record.phase, record.hours,
+                  record.description, record.action, record.time_code,
+                  record.work_date, record.line_item)
         with self._connect() as db:
             db.execute(sql, values)
 
     def add_record(self, record: Union[TimeCardEntry, dict]) -> None:
-        if not isinstance(record, (TimeCardEntry, dict)):
+        if isinstance(record, (dict)):
             record = TimeCardEntry(**record)
         sql = """
                 INSERT INTO records(work_date, line_item, workorder, phase, hours, description, action, time_code)
                 VALUES(?,?,?,?,?,?,?,?)
                 """
-        values = (record['work_date'], record['line_item'], record['workorder'],
-                  record['phase'], record['hours'], record['description'],
-                  record['action'], record['time_code'])
-        if not self.get_record(record['work_date'], record['line_item']):
+        values = (record.work_date, record.line_item, record.workorder,
+                  record.phase, record.hours, record.description,
+                  record.action, record.time_code)
+        if not self.get_record(record.work_date, record.line_item):
             with self._connect() as db:
                 db.execute(sql, values)
 
@@ -157,7 +155,7 @@ class TimeCardDatabase:
         sql = 'SELECT * FROM records WHERE work_date=?'
         with self._connect() as db:
             c = db.execute(sql, [work_date])
-            tc = [TimeCardEntry(**record) for record in c.fetchall()]
+            tc = [TimeCardEntry(*record) for record in c.fetchall()]
             c.close()
             self.current_view = TimeCard(work_date, tc)
             return self.current_view
@@ -174,7 +172,7 @@ class TimeCardDatabase:
         text = f'%{text}%'
         with self._connect() as db:
             c = db.execute(sql, [text, date1, date2])
-            r = [TimeCardEntry(**record) for record in c.fetchall()]
+            r = [TimeCardEntry(*record) for record in c.fetchall()]
             c.close()
             return r
 
