@@ -13,11 +13,13 @@ from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import (NextScene, ResizeScreenError,
                                     StopApplication)
 from asciimatics.scene import Scene
-from asciimatics.widgets import (THEMES, Button, DatePicker, Divider,
+from asciimatics.screen import Screen
+from asciimatics.widgets import (Button, DatePicker, Divider,
                                  DropdownList, FileBrowser, Frame, Label,
                                  Layout, MultiColumnListBox, PopUpDialog,
-                                 Screen, Text, TextBox, Widget, _enforce_width,
+                                 Text, TextBox, Widget, _enforce_width,
                                  )
+from asciimatics.widgets.utilities import THEMES
 
 from .aim import AimSession
 from .database import TimeCardDatabase

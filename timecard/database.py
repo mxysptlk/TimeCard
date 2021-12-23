@@ -11,7 +11,7 @@ WORK = os.path.join(HOME, 'OneDrive - UW', 'Work')
 DB_FILE = 'time_cards.db'
 
 
-@dataclass
+@dataclass(slots=True)
 class TimeCardEntry:
     work_date: date = date.today()
     line_item: int = 0
