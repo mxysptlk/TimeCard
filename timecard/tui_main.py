@@ -13,7 +13,7 @@ from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import (NextScene, ResizeScreenError,
                                     StopApplication)
 from asciimatics.scene import Scene
-from asciimatics.widgets import (THEMES, Button, CheckBox, DatePicker, Divider,
+from asciimatics.widgets import (THEMES, Button, DatePicker, Divider,
                                  DropdownList, FileBrowser, Frame, Label,
                                  Layout, MultiColumnListBox, PopUpDialog,
                                  Screen, Text, TextBox, Widget, _enforce_width,
@@ -353,9 +353,6 @@ class TimeCardView(Frame):
     def on_submit(self):
         Thread(target=self._on_submit).start()
 
-    def on_vacation(self):
-        self.scene.add_effect(VacationEntry(self.screen, self._db))
-
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             # self._status_line.value = str(event.key_code)
@@ -483,76 +480,6 @@ class TimeEntryEdit(Frame):
                 self.on_cancel()
                 event = None
         super().process_event(event)
-
-
-class VacationEntry(Frame):
-    def __init__(self, screen, db):
-        super().__init__(screen,
-                         int(screen.height * 2 // 3),
-                         int(screen.width * 2 // 3),
-                         title='Vacation Entry',
-                         can_scroll=False,
-                         has_shadow=True,
-                         is_modal=True,
-                         reduce_cpu=True)
-        self.set_theme(CONFIG['DEFAULT']['theme'])
-        self._db = db
-        self.data['start'] = datetime.date.today()
-        self.data['end'] = datetime.date.today()
-
-        form = Layout([100], fill_frame=True)
-        buttons = Layout([1, 2, 1])
-
-        self.add_layout(form)
-        self.add_layout(buttons)
-
-        form.add_widget(DatePicker('Start date:', 'start'))
-        form.add_widget(DatePicker('End date:', 'end'))
-        form.add_widget(CheckBox('', 'Submit in AiM:', 'submit'))
-
-        buttons.add_widget(BoxedButton('Cancel', self.on_cancel), 0)
-        buttons.add_widget(BoxedButton('OK', self.on_ok), 2)
-
-        self.fix()
-
-    def _submit(self, dates):
-        with AimSession(netid=CONFIG['NETID']) as aim:
-            aim.login()
-            aim.vacation(CONFIG['AIM']['EMPLOYEE_ID'], dates)
-
-    def on_ok(self):
-        self.save()
-        start = self.data['start'].toordinal()
-        end = self.data['end'].toordinal()
-        dates = [datetime.date.fromordinal(i) for i in range(start, end + 1)]
-        dates = [date for date in dates if date.weekday() < 5]
-        # add records to database
-        for date in dates:
-            tc = defaultdict(lambda: '',
-                             work_date=date,
-                             line_item=0,
-                             hours=8,
-                             description='VACATION',
-                             time_code='A')
-            self._db.add_record(tc)
-        if self.data['submit']:
-            dates = [date.strftime("%d/%b/%Y") for date in dates]
-            Thread(target=self._submit, args=[dates]).start()
-
-        self.scene.remove_effect(self)
-
-    def on_cancel(self):
-        self.scene.remove_effect(self)
-
-    def process_event(self, event):
-        if isinstance(event, KeyboardEvent):
-            if event.key_code == Screen.KEY_ESCAPE:
-                self.on_cancel()
-                event = None
-        super().process_event(event)
-
-    def clone(self, screen, scene):
-        scene.add_effect(VacationEntry(screen, self._db))
 
 
 class FileBrowsePopup(Frame):
