@@ -12,7 +12,7 @@ DB_FILE = 'time_cards.db'
 
 
 @dataclass
-class TimeCardEntry(dict):
+class TimeCardEntry:
     work_date: date = date.today()
     line_item: int = 0
     workorder: str = ''
