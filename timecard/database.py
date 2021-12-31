@@ -55,7 +55,7 @@ class TimeCard:
 
     @property
     def hours(self) -> float:
-        return sum([entry['hours'] for entry in self.entries])
+        return sum(entry['hours'] for entry in self.entries)
 
 
 class TimeCardDatabase:
@@ -118,15 +118,15 @@ class TimeCardDatabase:
     def add_record(self, record: Union[TimeCardEntry, dict]) -> None:
         if isinstance(record, (dict)):
             record = TimeCardEntry(**record)
-        sql = """
+        if not self.get_record(record.work_date, record.line_item):
+            with self._connect() as db:
+                sql = """
                 INSERT INTO records(work_date, line_item, workorder, phase, hours, description, action, time_code)
                 VALUES(?,?,?,?,?,?,?,?)
                 """
-        values = (record.work_date, record.line_item, record.workorder,
-                  record.phase, record.hours, record.description,
-                  record.action, record.time_code)
-        if not self.get_record(record.work_date, record.line_item):
-            with self._connect() as db:
+                values = (record.work_date, record.line_item, record.workorder,
+                          record.phase, record.hours, record.description,
+                          record.action, record.time_code)
                 db.execute(sql, values)
 
     def _delete_record(self, work_date: date, item: int) -> None:

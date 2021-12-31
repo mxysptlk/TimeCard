@@ -358,10 +358,10 @@ class TimeCardView(Frame):
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             # self._status_line.value = str(event.key_code)
-            if event.key_code == 121 or event.key_code == 89:
+            if event.key_code in [121, 89]:
                 self.on_copy()
                 event = None
-            elif event.key_code == 112 or event.key_code == 80:
+            elif event.key_code in [112, 80]:
                 self.on_paste()
                 event = None
             elif event.key_code == 63:
@@ -390,11 +390,11 @@ class TimeEntryEdit(Frame):
         self.set_theme(CONFIG['DEFAULT']['theme'])
         self._db = db
 
-        self._action = DropdownList(
-            [(k, v) for k, v in ACTIONS.items()],
-            'Action:', 'action')
-        self._time_code = DropdownList([(k, v) for k, v in TIME_CODES.items()],
-                                       'Time Code:', 'time_code')
+        self._action = DropdownList(list(ACTIONS.items()), 'Action:', 'action')
+        self._time_code = DropdownList(
+            list(TIME_CODES.items()), 'Time Code:', 'time_code'
+        )
+
         self._id = Text()
         self._id.disabled = True
         self._id.custom_colour = 'edit_text'
@@ -469,7 +469,7 @@ class TimeEntryEdit(Frame):
                              description='',
                              action=1,
                              time_code=1)
-        self._id.value = f'Item: {str(self.data["line_item"])}'
+        self._id.value = f'Item: {self.data["line_item"]}'
         self._date.value = f'Date: {self.data["work_date"].strftime("%d/%b/%Y")}'
 
     def on_cancel(self):
@@ -477,10 +477,11 @@ class TimeEntryEdit(Frame):
         raise NextScene('Main')
 
     def process_event(self, event):
-        if isinstance(event, KeyboardEvent):
-            if event.key_code == Screen.KEY_ESCAPE:
-                self.on_cancel()
-                event = None
+        if (
+            isinstance(event, KeyboardEvent) and event.key_code == Screen.KEY_ESCAPE
+        ):
+            self.on_cancel()
+            event = None
         super().process_event(event)
 
 
@@ -520,10 +521,9 @@ class FileBrowsePopup(Frame):
         self.scene.remove_effect(self)
 
     def process_event(self, event):
-        if isinstance(event, KeyboardEvent):
-            if event.key_code == Screen.KEY_ESCAPE:
-                self.on_cancel()
-                event = None
+        if isinstance(event, KeyboardEvent) and event.key_code == Screen.KEY_ESCAPE:
+            self.on_cancel()
+            event = None
         super().process_event(event)
 
     def clone(self, screen, scene):
@@ -605,10 +605,9 @@ class SearchView(Frame):
         raise NextScene('Main')
 
     def process_event(self, event):
-        if isinstance(event, KeyboardEvent):
-            if event.key_code == 121:
-                self.on_copy()
-                event = None
+        if isinstance(event, KeyboardEvent) and event.key_code == 121:
+            self.on_copy()
+            event = None
         super().process_event(event)
 
 
@@ -640,7 +639,8 @@ class SettingsView(Frame):
         self._dbfile.disabled = True
         self._chpass = BoxedButton('Change', self.on_chpass)
         self._theme_select = DropdownList(
-            [(k, v) for k, v in THEME_DICT.items()], 'Theme:', 'theme', self._ch_theme)
+            list(THEME_DICT.items()), 'Theme:', 'theme', self._ch_theme
+        )
 
         self.add_layout(form)
         self.add_layout(buttons)
@@ -687,7 +687,7 @@ class SettingsView(Frame):
         self._pwd2.disabled = False
         self._chpass.disabled = True
 
-    def on_save(self):
+    def on_save(self):  # sourcery skip: extract-method
         self.save()
         themes = {v: k for k, v in THEME_DICT.items()}
         if self._edit_pwd and self.data['pwd1'] != self.data['pwd2']:
@@ -716,10 +716,9 @@ class SettingsView(Frame):
         self.scene.remove_effect(self)
 
     def process_event(self, event):
-        if isinstance(event, KeyboardEvent):
-            if event.key_code == Screen.KEY_ESCAPE:
-                self.on_cancel()
-                event = None
+        if isinstance(event, KeyboardEvent) and event.key_code == Screen.KEY_ESCAPE:
+            self.on_cancel()
+            event = None
 
         super().process_event(event)
 
@@ -735,9 +734,7 @@ def init():
     CONFIG['DEFAULT']['db_file'] = os.path.join(
         os.path.expanduser('~'), 'Documents', 'time_cards.db')
     CONFIG['DEFAULT']['theme'] = 'bright'
-    CONFIG['AIM'] = {}
-    CONFIG['AIM']['EMPLOYEE_ID'] = ''
-    CONFIG['AIM']['NETID'] = ''
+    CONFIG['AIM'] = {'EMPLOYEE_ID': '', 'NETID': ''}
     with open(CONFIG_FILE, 'w') as f:
         CONFIG.write(f)
 
