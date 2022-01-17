@@ -4,7 +4,6 @@ import sys
 import time
 
 import keyring
-# import pyodbc
 from typing import Optional, Iterable
 from selenium import webdriver
 from selenium.webdriver.common.by import By
