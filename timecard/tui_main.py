@@ -22,6 +22,7 @@ from asciimatics.widgets.utilities import THEMES
 
 from .aim import AimSession
 from .database import TimeCardDatabase
+from .__init__ import version
 
 
 # Monkey patch to make None support term default
@@ -630,6 +631,8 @@ class SettingsView(Frame):
         self._db = db
         form = Layout([75, 25], fill_frame=True)
         buttons = Layout([1, 2, 1])
+        self._version = Text('Version:', 'version')
+        self._version.disabled = True
         self._eid = Text('Employee ID:', 'id')
         self._netid = Text('NetID:', 'netid')
         self._pwd = Text('Password:', 'pwd1', hide_char='*')
@@ -649,6 +652,7 @@ class SettingsView(Frame):
         self.add_layout(form)
         self.add_layout(buttons)
 
+        form.add_widget(self._version)
         form.add_widget(self._eid)
         form.add_widget(self._netid)
         form.add_widget(self._pwd)
@@ -675,6 +679,7 @@ class SettingsView(Frame):
         self._dbfile.value = CONFIG['DEFAULT']['db_file']
         self._pwd.value = keyring.get_password('aim', CONFIG['AIM']['NETID'])
         self._theme_select.value = THEME_DICT[CONFIG['DEFAULT']['theme']]
+        self._version.value = f'{version}'
 
     def _ch_theme(self):
         themes = {v: k for k, v in THEME_DICT.items()}
