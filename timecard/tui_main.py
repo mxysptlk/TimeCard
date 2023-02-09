@@ -345,7 +345,12 @@ class TimeCardView(Frame):
         self._status_line.value = 'Creating webdriver...'
         with AimSession(netid=CONFIG['AIM']['NETID']) as aim:
             self._status_line.value = 'logging in...'
-            aim.login()
+            try:
+                aim.login()
+            except TimeoutError:
+                self._status_line.custom_colour = 'invalid'
+                self._status_line.value = "login timed out"
+                return
             for msg in aim.new_timecard(CONFIG['AIM']['EMPLOYEE_ID'], workdate, entries):
                 if 'error' in msg.lower():
                     self._status_line.custom_colour = 'invalid'

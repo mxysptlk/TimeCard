@@ -140,6 +140,7 @@ class AimSession:
 
     def login(self) -> None:
         "Login to AiM. "
+        counter = 0
         password = keyring.get_password('aim', self.netid)
         if not password:
             password = getpass.getpass()
@@ -151,6 +152,9 @@ class AimSession:
         self.send_keys_to(PWD, Keys.RETURN)
         while 'NetID' in self.driver.title:
             time.sleep(1)
+            counter += 1
+            if counter == 60:
+                raise TimeoutError
 
     def click(self, element_id: str) -> None:
         self.driver.find_element(By.ID, element_id).click()
