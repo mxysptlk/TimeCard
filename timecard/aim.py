@@ -109,16 +109,16 @@ class AimSession:
     interacting with the UW work management web app
     """
 
-    def __init__(self, *, netid: str, driver: Optional[webdriver.Remote] = None) -> None:
+    def __init__(self, *, netid: str, driver: Optional[webdriver.Remote] = None, debug: bool = False) -> None:
 
         if driver is None:
             opt = webdriver.FirefoxOptions()
             try:
-                opt.headless = True
+                opt.headless = not debug
                 opt.profile = webdriver.FirefoxProfile(
                     _locate_firefox_profile())
             except (AttributeError, TypeError):
-                opt.set_headless(True)
+                opt.set_headless(not debug)
             driver = webdriver.Firefox(
                 options=opt, service_log_path=os.devnull)
 

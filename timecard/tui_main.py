@@ -13,7 +13,7 @@ from asciimatics.exceptions import (NextScene, ResizeScreenError,
                                     StopApplication)
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
-from asciimatics.widgets import (Button, DatePicker, Divider,
+from asciimatics.widgets import (Button, CheckBox, DatePicker, Divider,
                                  DropdownList, FileBrowser, Frame, Label,
                                  Layout, MultiColumnListBox, PopUpDialog,
                                  Text, TextBox, Widget, _enforce_width,
@@ -344,7 +344,8 @@ class TimeCardView(Frame):
         workdate = self._cache.date.strftime('%b %d, %Y')
         CONFIG.read(CONFIG_FILE)
         self._status_line.value = 'Creating webdriver...'
-        with AimSession(netid=CONFIG['AIM']['NETID']) as aim:
+        d = CONFIG['DEFAULT']['debug'] == 'True'
+        with AimSession(netid=CONFIG['AIM']['NETID'], debug=d) as aim:
             self._status_line.value = 'logging in...'
             try:
                 aim.login()
@@ -648,6 +649,7 @@ class SettingsView(Frame):
         self._theme_select = DropdownList(
             list(THEME_DICT.items()), 'Theme:', 'theme', self._ch_theme
         )
+        self._debug = CheckBox("Debug", name='debug')
 
         self.add_layout(form)
         self.add_layout(buttons)
@@ -666,6 +668,7 @@ class SettingsView(Frame):
         form.add_widget(BoxedButton('Change', self.on_chdb), 1)
         form.add_widget(Divider(draw_line=False))
         form.add_widget(self._theme_select)
+        form.add_widget(self._debug)
 
         buttons.add_widget(BoxedButton('Cancel', self.on_cancel), 0)
         buttons.add_widget(BoxedButton('Save', self.on_save), 2)
@@ -679,6 +682,7 @@ class SettingsView(Frame):
         self._dbfile.value = CONFIG['DEFAULT']['db_file']
         self._pwd.value = keyring.get_password('aim', CONFIG['AIM']['NETID'])
         self._theme_select.value = THEME_DICT[CONFIG['DEFAULT']['theme']]
+        self._debug.value = CONFIG['DEFAULT']['debug'] == 'True'
         self._version.value = f'{version}'
 
     def _ch_theme(self):
@@ -706,6 +710,7 @@ class SettingsView(Frame):
             CONFIG['AIM']['NETID'] = self.data['netid']
             CONFIG['AIM']['EMPLOYEE_ID'] = self.data['id']
             CONFIG['DEFAULT']['db_file'] = self.data['db_file']
+            CONFIG['DEFAULT']['debug'] = str(self.data['debug'])
             CONFIG['DEFAULT']['theme'] = themes[self.data['theme']]
             with open(CONFIG_FILE, 'w') as f:
                 CONFIG.write(f)
@@ -743,6 +748,7 @@ def init():
     CONFIG['DEFAULT']['db_file'] = os.path.join(
         os.path.expanduser('~'), 'Documents', 'time_cards.db')
     CONFIG['DEFAULT']['theme'] = 'bright'
+    CONFIG['DEFAULT']['debug'] = ''
     CONFIG['AIM'] = {'EMPLOYEE_ID': '', 'NETID': ''}
     with open(CONFIG_FILE, 'w') as f:
         CONFIG.write(f)
